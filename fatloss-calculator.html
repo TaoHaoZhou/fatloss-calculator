@@ -132,10 +132,10 @@ input[type="date"]{background:#0f1117!important;border:1px solid #2a2d3a!importa
 <body>
 <h1>减脂热量追踪</h1>
 <div class="tab-bar">
-  <div class="tab active" id="tabCalc" onclick="switchTab('"'"'calc'"'"')">今日</div>
-  <div class="tab" id="tabHist" onclick="switchTab('"'"'hist'"'"')">历史</div>
-  <div class="tab" id="tabStats" onclick="switchTab('"'"'stats'"'"')">趋势</div>
-  <div class="tab" id="tabData" onclick="switchTab('"'"'data'"'"')">数据</div>
+  <div class="tab active" id="tabCalc" data-tab="calc">今日</div>
+  <div class="tab" id="tabHist" data-tab="hist">历史</div>
+  <div class="tab" id="tabStats" data-tab="stats">趋势</div>
+  <div class="tab" id="tabData" data-tab="data">数据</div>
 </div>
 
 <div id="calcTab">
@@ -193,14 +193,14 @@ input[type="date"]{background:#0f1117!important;border:1px solid #2a2d3a!importa
       <div class="field"><label>运动强度</label><select id="activity"><option value="1.2">久坐</option><option value="1.375">轻度</option><option value="1.55" selected>中度</option><option value="1.725">高强度</option><option value="1.9">运动员</option></select></div>
       <div class="field"><label>缺口 kcal</label><input type="number" id="deficit" value="500"></div>
     </div>
-    <button class="btn" onclick="saveProfile()">保存设置</button>
+    <button class="btn" id="saveProfileBtn">保存设置</button>
   </div>
 
   <div class="card">
     <div class="section-title">空腹体重</div>
     <div class="wt-row">
       <input type="number" id="fastedWeight" placeholder="68.5" step="0.1">
-      <button onclick="saveWeight()">记录</button>
+      <button id="saveWeightBtn">记录</button>
     </div>
     <div class="wt-delta" id="wtDelta"></div>
   </div>
@@ -210,7 +210,7 @@ input[type="date"]{background:#0f1117!important;border:1px solid #2a2d3a!importa
     <div class="add-row">
       <select id="foodSel"></select>
       <input type="number" id="foodWt" value="100" min="1">
-      <button class="add-btn" onclick="addFromSelect()">+</button>
+      <button class="add-btn" id="addFromSelectBtn">+</button>
     </div>
   </div>
 
@@ -914,13 +914,54 @@ function init(){
   buildFilters();buildQuickTags();buildSelect();
   document.getElementById("datePick")&&(document.getElementById("datePick").value=currentDate,document.getElementById("datePick").max=todayStr());
   updateHistDayInfo();recalc();
-  // 搜索事件
+
+  // 搜索
   var searchInput=document.getElementById("foodSearch");
   searchInput.addEventListener("input",function(){doSearch(this.value);});
   searchInput.addEventListener("focus",function(){if(this.value)doSearch(this.value);});
+  document.getElementById("searchClear").addEventListener("click",clearSearch);
   document.addEventListener("click",function(e){
     if(!e.target.closest(".search-wrap")&&!e.target.closest(".search-results"))closeSearch();
   });
+
+  // Tab 切换
+  document.querySelectorAll(".tab").forEach(function(tab){
+    tab.addEventListener("click",function(){
+      switchTab(this.dataset.tab);
+    });
+  });
+
+  // 档案
+  document.getElementById("saveProfileBtn").addEventListener("click",saveProfile);
+
+  // 体重
+  document.getElementById("saveWeightBtn").addEventListener("click",saveWeight);
+
+  // 列表选择
+  document.getElementById("addFromSelectBtn").addEventListener("click",addFromSelect);
+
+  // 清空
+  document.getElementById("clearAllBtn").addEventListener("click",clearAll);
+
+  // 历史
+  document.getElementById("prevDayBtn").addEventListener("click",function(){changeDate(-1);});
+  document.getElementById("nextDayBtn").addEventListener("click",function(){changeDate(1);});
+  document.getElementById("goTodayBtn").addEventListener("click",goToday);
+  document.getElementById("datePick").addEventListener("change",onDateChange);
+
+  // 图表
+  document.getElementById("chartBtnWt").addEventListener("click",function(){showChart("weight");});
+  document.getElementById("chartBtnCal").addEventListener("click",function(){showChart("cal");});
+  document.getElementById("chartBtnMacro").addEventListener("click",function(){showChart("macro");});
+
+  // 数据
+  document.getElementById("exportJsonBtn").addEventListener("click",exportData);
+  document.getElementById("importJsonBtn").addEventListener("click",function(){
+    document.getElementById("importFile").click();
+  });
+  document.getElementById("importFile").addEventListener("change",importData);
+  document.getElementById("exportCsvBtn").addEventListener("click",exportCSV);
+  document.getElementById("resetAllBtn").addEventListener("click",resetAll);
 }
 init();
 </script>
