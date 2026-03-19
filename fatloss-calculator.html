@@ -130,7 +130,7 @@ input[type="date"]{background:#0f1117!important;border:1px solid #2a2d3a!importa
 </style>
 </head>
 <body>
-<script>
+
 <h1>减脂热量追踪</h1>
 <div class="tab-bar">
   <div class="tab active" id="tabCalc" data-tab="calc">今日</div>
@@ -418,7 +418,7 @@ function pad(n){return n<10?"0"+n:n;}
 function kcal(c,p,f){return Math.round(c*4+p*4+f*9);}
 function wkday(ds){return["周日","周一","周二","周三","周四","周五","周六"][new Date(ds+"T00:00:00").getDay()];}
 function fmtDate(ds){var d=new Date(ds+"T00:00:00");return(d.getMonth()+1)+"月"+d.getDate()+"日";}
-function toast(msg){var t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(function(){t.classList.remove("show");},1800);}
+function toast(msg){var t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(function(){t.classList.remove("show")},1800);}
 
 // ── 计算 ─────────────────────────────────────
 function BMR(){return P.gender==="male"?10*P.weight+6.25*P.height-5*P.age+5:10*P.weight+6.25*P.height-5*P.age-161;}
