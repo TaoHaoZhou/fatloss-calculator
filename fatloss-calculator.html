@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>减脂计算器 · 增强版</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:#0f1117;color:#e8e8f0;padding:16px;max-width:480px;margin:0 auto;padding-bottom:80px}
+h1{text-align:center;color:#3dd68c;font-size:20px;margin:10px 0 14px}
+.tab-bar{display:flex;gap:6px;margin-bottom:14px}
+.tab{flex:1;padding:9px;background:#1a1d27;border:1px solid #2a2d3a;border-radius:8px;text-align:center;cursor:pointer;font-size:12px;color:#888}
+.tab.active{background:rgba(61,214,140,0.15);border-color:#3dd68c;color:#3dd68c}
+.card{background:#1a1d27;border:1px solid #2a2d3a;border-radius:12px;padding:14px;margin-bottom:12px;position:relative}
+.search-wrap{position:relative;margin-bottom:8px}
+.search-wrap input{width:100%;background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;color:#fff;padding:9px 34px 9px 12px;font-size:14px;outline:none;transition:border-color .2s}
+.search-wrap input:focus{border-color:#3dd68c}
+.search-wrap input::placeholder{color:#444}
+.search-icon{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#444;font-size:13px;pointer-events:none}
+.search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#555;font-size:13px;cursor:pointer;padding:2px 6px;border-radius:4px;display:none}
+.search-clear.show{display:inline}
+.search-clear:hover{color:#fff;background:#2a2d3a}
+.filter-scroll{display:flex;gap:5px;overflow-x:auto;padding-bottom:4px;margin-bottom:6px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.filter-scroll::-webkit-scrollbar{display:none}
+.filter-tag{padding:4px 9px;border-radius:20px;font-size:11px;white-space:nowrap;cursor:pointer;border:1px solid #2a2d3a;background:#1a1d27;color:#777;transition:all .2s;flex-shrink:0}
+.filter-tag.active{background:rgba(61,214,140,0.15);border-color:#3dd68c;color:#3dd68c}
+.filter-tag:hover:not(.active){border-color:#444;color:#aaa}
+.search-results{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#1c1f2e;border:1px solid #2a2d3a;border-radius:10px;max-height:300px;overflow-y:auto;z-index:200;display:none;box-shadow:0 8px 30px rgba(0,0,0,.6)}
+.search-results.open{display:block}
+.search-result-item{padding:10px 12px;cursor:pointer;border-bottom:1px solid #252838;display:flex;justify-content:space-between;align-items:center;transition:background .15s}
+.search-result-item:last-child{border-bottom:none}
+.search-result-item:hover,.search-result-item.sel{background:#252838}
+.sr-left{min-width:0;flex:1}
+.sr-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sr-name .hl{color:#3dd68c;background:rgba(61,214,140,.18);border-radius:2px;padding:0 2px}
+.sr-meta{font-size:10px;color:#666;margin-top:2px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.sr-tag{font-size:10px;padding:1px 5px;border-radius:3px;background:rgba(255,255,255,.05);color:#888}
+.sr-right{text-align:right;flex-shrink:0;margin-left:10px}
+.sr-kcal{font-size:13px;color:#ffd93d;font-weight:700}
+.sr-unit{font-size:10px;color:#555}
+.search-no{text-align:center;color:#444;padding:20px;font-size:13px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:8px}
+.mini{background:#1a1d27;border:1px solid #2a2d3a;border-radius:9px;padding:9px 7px;text-align:center}
+.mini .lbl{font-size:10px;color:#666;margin-bottom:2px}
+.mini .val{font-size:18px;font-weight:800}
+.macro-section{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.macro-item .m-label{font-size:10px;margin-bottom:2px}
+.macro-item .m-label span{font-weight:700}
+.c-lbl span{color:#ffd93d}.p-lbl span{color:#3dd68c}.f-lbl span{color:#ff6b6b}
+.macro-item .m-val{font-size:11px;color:#aaa}
+.macro-item .m-bar{background:#0f1117;border-radius:3px;height:4px;margin-top:3px;overflow:hidden}
+.macro-fill{height:100%;border-radius:3px;transition:width .4s}
+.macro-fill.c{background:#ffd93d}.macro-fill.p{background:#3dd68c}.macro-fill.f{background:#ff6b6b}
+.cat-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px}
+.field{display:flex;flex-direction:column;gap:3px}
+.field label{font-size:11px;color:#666}
+.field input,.field select{background:#0f1117;border:1px solid #2a2d3a;border-radius:6px;color:#fff;padding:8px;font-size:13px;width:100%;font-family:inherit}
+.field select{cursor:pointer}
+.field input:focus,.field select:focus{outline:none;border-color:#3dd68c}
+.btn{width:100%;padding:9px;background:#3dd68c;color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;font-family:inherit}
+.wt-row{display:flex;gap:8px}
+.wt-row input{flex:1;background:#0f1117;border:1px solid #2a2d3a;border-radius:6px;color:#fff;padding:8px;font-size:13px;font-family:inherit}
+.wt-row input:focus{outline:none;border-color:#3dd68c}
+.wt-row button{background:#3dd68c;color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:13px;padding:8px 14px;white-space:nowrap;font-family:inherit}
+.wt-delta{font-size:11px;color:#666;margin-top:5px;text-align:center;min-height:14px}
+.section-title{font-size:10px;color:#555;margin-bottom:7px;text-transform:uppercase;letter-spacing:.8px}
+.quick-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px}
+.quick-tag{padding:4px 10px;border-radius:16px;font-size:11px;background:rgba(61,214,140,.1);border:1px solid #2a2d3a;color:#3dd68c;cursor:pointer;transition:all .2s}
+.quick-tag:hover{background:rgba(61,214,140,.2);border-color:#3dd68c}
+.food-item{display:flex;justify-content:space-between;align-items:center;background:#1a1d27;border:1px solid #2a2d3a;border-radius:8px;padding:9px 10px;margin-bottom:5px}
+.food-left{min-width:0;flex:1}
+.food-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.food-meta{font-size:10px;color:#666;margin-top:2px}
+.c{color:#ffd93d}.p{color:#3dd68c}.f{color:#ff6b6b}
+.food-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.food-kcal{font-size:12px;color:#ffd93d;font-weight:700;text-align:right;min-width:44px}
+.wt-adjust input{width:52px;text-align:center;background:#0f1117;border:1px solid #2a2d3a;border-radius:4px;color:#fff;padding:4px 5px;font-size:11px;font-family:inherit}
+.wt-adjust input:focus{outline:none;border-color:#3dd68c}
+.wt-adjust .adj-btn{background:#1a1d27;border:1px solid #2a2d3a;color:#888;border-radius:4px;padding:3px 7px;font-size:11px;cursor:pointer;font-family:inherit}
+.wt-adjust .adj-btn:hover{border-color:#3dd68c;color:#3dd68c}
+.del-btn{background:none;border:none;color:#444;font-size:13px;cursor:pointer;padding:3px 5px;border-radius:4px}
+.del-btn:hover{color:#ff6b6b;background:rgba(255,107,107,.12)}
+.empty{text-align:center;color:#333;padding:18px;font-size:13px;border:1px dashed #222;border-radius:8px}
+.day-summary{background:#161820;border:1px solid #2a2d3a;border-radius:9px;padding:10px 12px;margin-bottom:8px;font-size:12px;color:#888;line-height:1.7}
+.day-summary .ds-row{display:flex;justify-content:space-between}
+.day-summary .v{color:#e8e8f0;font-weight:600}
+.day-summary .ok{color:#3dd68c}.day-summary .warn{color:#ff6b6b}
+.btn-clear{width:100%;padding:9px;background:transparent;border:1px solid #2a2d3a;color:#555;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit}
+.btn-clear:hover{border-color:#ff6b6b;color:#ff6b6b}
+.add-row{display:flex;gap:7px}
+.add-row select,.add-row input{flex:1;background:#0f1117;border:1px solid #2a2d3a;border-radius:6px;color:#fff;padding:9px;font-size:13px;font-family:inherit}
+.add-row select{cursor:pointer}
+.add-row input:focus,.add-row select:focus{outline:none;border-color:#3dd68c}
+.add-btn{background:#3dd68c;color:#000;border:none;border-radius:6px;font-size:18px;font-weight:700;width:42px;cursor:pointer;flex-shrink:0;font-family:inherit}
+.date-nav{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.date-nav button{background:#1a1d27;border:1px solid #2a2d3a;color:#888;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:13px;font-family:inherit}
+.date-nav button:hover{border-color:#3dd68c;color:#3dd68c}
+.date-nav .date-title{flex:1;text-align:center;font-size:13px;font-weight:600}
+input[type="date"]{background:#0f1117!important;border:1px solid #2a2d3a!important;color:#fff!important;border-radius:6px!important;padding:7px!important;font-size:13px!important;font-family:inherit}
+.history-card{background:#1a1d27;border:1px solid #2a2d3a;border-radius:10px;padding:11px;margin-bottom:7px;cursor:pointer;transition:border-color .2s}
+.history-card:hover{border-color:#3dd68c}
+.history-top{display:flex;justify-content:space-between;align-items:center}
+.history-date{font-weight:700;font-size:13px}
+.history-wt{color:#6bcfff;font-size:12px;font-weight:600}
+.history-cal{font-size:11px;margin-top:3px}
+.history-cal.ok{color:#3dd68c}.history-cal.over{color:#ff6b6b}
+.chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+.chip{padding:2px 6px;border-radius:6px;font-size:10px;font-weight:600}
+.chip.ok{background:rgba(61,214,140,.12);color:#3dd68c}
+.chip.over{background:rgba(255,107,107,.12);color:#ff6b6b}
+.history-foods{font-size:10px;color:#444;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chart-tabs{display:flex;gap:6px;margin-bottom:10px}
+.chart-tab{flex:1;padding:7px;background:#1a1d27;border:1px solid #2a2d3a;border-radius:7px;text-align:center;font-size:12px;color:#777;cursor:pointer;transition:all .2s;font-family:inherit}
+.chart-tab.active{border-color:#3dd68c;color:#3dd68c;background:rgba(61,214,140,.1)}
+.tools{display:flex;gap:7px;margin-bottom:8px}
+.tool-btn{flex:1;padding:8px;background:#1a1d27;border:1px solid #2a2d3a;border-radius:8px;color:#888;font-size:12px;cursor:pointer;text-align:center;transition:all .2s;font-family:inherit}
+.tool-btn:hover{border-color:#3dd68c;color:#3dd68c}
+.tool-btn.danger:hover{border-color:#ff6b6b;color:#ff6b6b}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#2a2d3a;color:#fff;padding:8px 18px;border-radius:20px;font-size:13px;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+.hidden{display:none!important}
+.wstat{background:#0f1117;border:1px solid #2a2d3a;border-radius:8px;padding:8px;text-align:center}
+.wstat .ws-label{font-size:10px;color:#555;margin-bottom:3px}
+.wstat .ws-val{font-size:16px;font-weight:700;color:#e8e8f0}
+.wstat .ws-val.green{color:#3dd68c}.wstat .ws-val.red{color:#ff6b6b}
+.wreport-item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1e2130;font-size:12px}
+.wreport-item:last-child{border-bottom:none}
+.wreport-item .wr-key{color:#888}
+.wreport-item .wr-val{color:#e8e8f0;font-weight:600}
+</style>
+</head>
+<body>
+<h1>减脂热量追踪</h1>
+<div class="tab-bar">
+  <div class="tab active" id="tabCalc" onclick="switchTab('"'"'calc'"'"')">今日</div>
+  <div class="tab" id="tabHist" onclick="switchTab('"'"'hist'"'"')">历史</div>
+  <div class="tab" id="tabStats" onclick="switchTab('"'"'stats'"'"')">趋势</div>
+  <div class="tab" id="tabData" onclick="switchTab('"'"'data'"'"')">数据</div>
+</div>
+
+<div id="calcTab">
+  <div class="card">
+    <div class="section-title">搜索食物</div>
+    <div class="search-wrap">
+      <input type="text" id="foodSearch" placeholder="输入名称：宫保鸡丁、鱼香肉丝、麻辣烫…" autocomplete="off" autocorrect="off" spellcheck="false">
+      <span class="search-icon">🔍</span>
+      <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
+    </div>
+    <div class="filter-scroll" id="filterTags"></div>
+    <div class="search-results" id="searchResults"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">快速添加</div>
+    <div class="quick-tags" id="quickTags"></div>
+  </div>
+
+  <div class="row3">
+    <div class="mini"><div class="lbl">BMR</div><div class="val" style="color:#6bcfff" id="bmrVal">--</div></div>
+    <div class="mini"><div class="lbl">目标</div><div class="val" style="color:#ffd93d" id="targetVal">--</div></div>
+    <div class="mini"><div class="lbl">剩余</div><div class="val" style="color:#3dd68c" id="calRem">--</div></div>
+  </div>
+
+  <div class="macro-section card">
+    <div class="macro-item">
+      <div class="m-label c-lbl"><span>碳水</span></div>
+      <div class="m-val"><span id="cEat">0</span>/<span id="cTot">--</span>g</div>
+      <div class="m-bar"><div class="macro-fill c" id="cBar" style="width:0%"></div></div>
+    </div>
+    <div class="macro-item">
+      <div class="m-label p-lbl"><span>蛋白</span></div>
+      <div class="m-val"><span id="pEat">0</span>/<span id="pTot">--</span>g</div>
+      <div class="m-bar"><div class="macro-fill p" id="pBar" style="width:0%"></div></div>
+    </div>
+    <div class="macro-item">
+      <div class="m-label f-lbl"><span>脂肪</span></div>
+      <div class="m-val"><span id="fEat">0</span>/<span id="fTot">--</span>g</div>
+      <div class="m-bar"><div class="macro-fill f" id="fBar" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">个人档案</div>
+    <div class="cat-row">
+      <div class="field"><label>性别</label><select id="gender"><option value="male">男</option><option value="female">女</option></select></div>
+      <div class="field"><label>年龄</label><input type="number" id="age" placeholder="25"></div>
+    </div>
+    <div class="cat-row">
+      <div class="field"><label>体重 kg</label><input type="number" id="weight" placeholder="70"></div>
+      <div class="field"><label>身高 cm</label><input type="number" id="height" placeholder="175"></div>
+    </div>
+    <div class="cat-row">
+      <div class="field"><label>运动强度</label><select id="activity"><option value="1.2">久坐</option><option value="1.375">轻度</option><option value="1.55" selected>中度</option><option value="1.725">高强度</option><option value="1.9">运动员</option></select></div>
+      <div class="field"><label>缺口 kcal</label><input type="number" id="deficit" value="500"></div>
+    </div>
+    <button class="btn" onclick="saveProfile()">保存设置</button>
+  </div>
+
+  <div class="card">
+    <div class="section-title">空腹体重</div>
+    <div class="wt-row">
+      <input type="number" id="fastedWeight" placeholder="68.5" step="0.1">
+      <button onclick="saveWeight()">记录</button>
+    </div>
+    <div class="wt-delta" id="wtDelta"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">从列表选择</div>
+    <div class="add-row">
+      <select id="foodSel"></select>
+      <input type="number" id="foodWt" value="100" min="1">
+      <button class="add-btn" onclick="addFromSelect()">+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">今日食物（<span id="foodCount">0</span>项 · <span id="foodCal">0</span>kcal）</div>
+    <div id="foodList"><div class="empty">还没有记录，上方搜索添加</div></div>
+    <div id="daySummary" class="day-summary hidden"></div>
+    <button class="btn-clear" onclick="clearAll()">清空今日</button>
+  </div>
+</div>
+
+<div id="histTab" class="hidden">
+  <div class="card">
+    <div class="date-nav">
+      <button onclick="changeDate(-1)">◀</button>
+      <div class="date-title" id="dateTitle">--</div>
+      <button onclick="changeDate(1)">▶</button>
+    </div>
+    <input type="date" id="datePick" style="width:100%;margin-bottom:8px" onchange="onDateChange()">
+    <button onclick="goToday()" style="width:100%;padding:7px;background:#1a1d27;border:1px solid #2a2d3a;color:#888;border-radius:6px;cursor:pointer;font-size:13px;margin-bottom:10px;font-family:inherit">跳到今天</button>
+    <div id="histDayInfo"></div>
+  </div>
+  <div id="historyList"><div class="empty">暂无历史记录</div></div>
+</div>
+
+<div id="statsTab" class="hidden">
+  <div class="card">
+    <div class="section-title">近30天趋势</div>
+    <div class="chart-tabs">
+      <button class="chart-tab active" id="chartBtnWt" onclick="showChart('"'"'weight'"'"')">体重</button>
+      <button class="chart-tab" id="chartBtnCal" onclick="showChart('"'"'cal'"'"')">热量</button>
+      <button class="chart-tab" id="chartBtnMacro" onclick="showChart('"'"'macro'"'"')">蛋白</button>
+    </div>
+    <div style="background:#0f1117;border-radius:8px;padding:10px">
+      <canvas id="trendCanvas" width="420" height="160" style="width:100%;height:160px;display:block"></canvas>
+    </div>
+    <div id="chartSummary" style="margin-top:8px;font-size:12px;color:#555"></div>
+  </div>
+  <div class="card">
+    <div class="section-title">近7天周报</div>
+    <div id="weekReport"></div>
+  </div>
+</div>
+
+<div id="dataTab" class="hidden">
+  <div class="card">
+    <div class="section-title">导出 / 导入</div>
+    <div class="tools">
+      <button class="tool-btn" onclick="exportData()">导出JSON</button>
+      <button class="tool-btn" onclick="document.getElementById('"'"'importFile'"'"').click()">导入JSON</button>
+      <button class="tool-btn" onclick="exportCSV()">导出CSV</button>
+    </div>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+  </div>
+  <div class="card">
+    <div class="section-title">危险区</div>
+    <button class="btn-clear" style="border-color:#ff6b6b;color:#ff6b6b" onclick="resetAll()">删除所有数据</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+var DB = {
+  // ─── 主食 ─────────────────────────────────
+  "白米饭":          {c:25.9,p:2.6,f:0.3,cat:"主食",tags:"白米饭 米饭"},
+  "糙米饭":          {c:23.0,p:2.6,f:0.8,cat:"主食",tags:"糙米 粗粮米饭"},
+  "杂粮饭":          {c:22.5,p:3.0,f:0.6,cat:"主食",tags:"杂粮 粗粮"},
+  "全麦面包":        {c:43.0,p:9.0,f:3.4,cat:"主食",tags:"全麦 面包 粗粮"},
+  "白面包":          {c:49.0,p:7.0,f:2.0,cat:"主食",tags:"白面包 面包"},
+  "吐司":            {c:47.0,p:8.0,f:3.0,cat:"主食",tags:"吐司 面包"},
+  "燕麦片":          {c:55.0,p:13.0,f:6.5,cat:"主食",tags:"燕麦 麦片 早餐 粗粮"},
+  "即食燕麦":        {c:57.0,p:12.0,f:7.0,cat:"主食",tags:"即食燕麦 燕麦"},
+  "煮面条":          {c:25.0,p:3.5,f:0.5,cat:"主食",tags:"面条 面 煮面"},
+  "挂面":            {c:70.0,p:12.0,f:1.5,cat:"主食",tags:"挂面 面"},
+  "蒸红薯":          {c:20.0,p:1.2,f:0.1,cat:"主食",tags:"红薯 地瓜 薯类"},
+  "蒸土豆":          {c:17.0,p:2.0,f:0.1,cat:"主食",tags:"土豆 马铃薯 薯类"},
+  "蒸玉米":          {c:19.0,p:3.4,f:1.5,cat:"主食",tags:"玉米 粗粮"},
+  "南瓜":            {c:5.3, p:0.7,f:0.1,cat:"主食",tags:"南瓜"},
+  "小米粥":          {c:9.2, p:1.0,f:0.3,cat:"主食",tags:"小米粥 粥"},
+  "馒头":            {c:45.0,p:7.0,f:1.0,cat:"主食",tags:"馒头 面食"},
+  "包子（肉）":      {c:25.0,p:9.0,f:12.0,cat:"主食",tags:"肉包 包子"},
+  "包子（菜）":      {c:30.0,p:5.0,f:6.0,cat:"主食",tags:"菜包 包子"},
+  "饺子（肉）":      {c:25.0,p:10.0,f:10.0,cat:"主食",tags:"水饺 肉饺"},
+  "饺子（素）":      {c:28.0,p:7.0,f:5.0,cat:"主食",tags:"水饺 素饺"},
+  // ─── 肉类 ─────────────────────────────────
+  "鸡胸肉":          {c:0.0, p:24.0,f:1.2,cat:"肉类",tags:"鸡胸 鸡肉 白肉"},
+  "鸡腿肉":          {c:0.0, p:20.0,f:8.0,cat:"肉类",tags:"鸡腿 鸡肉"},
+  "鸡翅":            {c:0.0, p:17.0,f:14.0,cat:"肉类",tags:"鸡翅 炸鸡"},
+  "鸡蛋":            {c:0.8, p:13.0,f:11.0,cat:"肉类",tags:"鸡蛋 蛋"},
+  "蛋白":            {c:0.3, p:11.0,f:0.1,cat:"肉类",tags:"蛋白 蛋清"},
+  "牛肉（瘦）":      {c:0.0, p:22.0,f:3.0,cat:"肉类",tags:"牛肉 瘦肉"},
+  "牛腱子":          {c:0.0, p:23.0,f:1.5,cat:"肉类",tags:"牛腱 牛肉"},
+  "牛腩":            {c:0.0, p:16.0,f:15.0,cat:"肉类",tags:"牛腩 牛肉"},
+  "羊肉（瘦）":      {c:0.0, p:21.0,f:5.0,cat:"肉类",tags:"羊肉 瘦肉"},
+  "猪里脊":          {c:0.0, p:21.0,f:3.5,cat:"肉类",tags:"猪里脊 瘦肉"},
+  "猪五花":          {c:0.0, p:14.0,f:30.0,cat:"肉类",tags:"五花肉 肥肉"},
+  "排骨":            {c:0.0, p:16.0,f:23.0,cat:"肉类",tags:"排骨 猪排"},
+  "三文鱼":          {c:0.0, p:20.0,f:13.0,cat:"肉类",tags:"三文鱼 鱼"},
+  "鳕鱼":            {c:0.0, p:18.0,f:0.5,cat:"肉类",tags:"鳕鱼 鱼"},
+  "虾仁":            {c:0.2, p:20.0,f:0.3,cat:"肉类",tags:"虾仁 虾 海鲜"},
+  "螃蟹":            {c:0.8, p:13.0,f:2.0,cat:"肉类",tags:"螃蟹 海鲜"},
+  "扇贝":            {c:2.5, p:14.0,f:0.5,cat:"肉类",tags:"扇贝 海鲜"},
+  // ─── 蔬菜 ─────────────────────────────────
+  "西兰花":          {c:4.3, p:2.8,f:0.4,cat:"蔬菜",tags:"西兰花 青花菜"},
+  "菠菜":            {c:3.6, p:2.9,f:0.4,cat:"蔬菜",tags:"菠菜"},
+  "生菜":            {c:2.0, p:1.2,f:0.2,cat:"蔬菜",tags:"生菜"},
+  "油麦菜":          {c:2.1, p:1.5,f:0.3,cat:"蔬菜",tags:"油麦菜"},
+  "白菜":            {c:2.4, p:1.5,f:0.2,cat:"蔬菜",tags:"白菜 大白菜"},
+  "小青菜":          {c:1.8, p:1.7,f:0.3,cat:"蔬菜",tags:"青菜 小白菜"},
+  "娃娃菜":          {c:2.0, p:1.2,f:0.2,cat:"蔬菜",tags:"娃娃菜"},
+  "番茄":            {c:3.9, p:0.9,f:0.2,cat:"蔬菜",tags:"番茄 西红柿"},
+  "黄瓜":            {c:2.4, p:0.7,f:0.1,cat:"蔬菜",tags:"黄瓜"},
+  "胡萝卜":          {c:8.8, p:0.9,f:0.2,cat:"蔬菜",tags:"胡萝卜"},
+  "白萝卜":          {c:4.0, p:0.6,f:0.1,cat:"蔬菜",tags:"白萝卜 萝卜"},
+  "彩椒":            {c:6.0, p:1.0,f:0.3,cat:"蔬菜",tags:"彩椒 甜椒 青椒"},
+  "荷兰豆":          {c:4.8, p:2.5,f:0.2,cat:"蔬菜",tags:"荷兰豆"},
+  "四季豆":          {c:4.0, p:2.0,f:0.2,cat:"蔬菜",tags:"四季豆 豆角"},
+  "芦笋":            {c:3.0, p:2.0,f:0.1,cat:"蔬菜",tags:"芦笋"},
+  "秋葵":            {c:4.0, p:2.0,f:0.3,cat:"蔬菜",tags:"秋葵"},
+  "蘑菇":            {c:2.1, p:2.4,f:0.4,cat:"蔬菜",tags:"蘑菇 香菇 菇"},
+  "木耳":            {c:3.2, p:1.5,f:0.2,cat:"蔬菜",tags:"木耳"},
+  "海带":            {c:1.2, p:1.2,f:0.1,cat:"蔬菜",tags:"海带"},
+  "紫菜":            {c:1.8, p:5.1,f:0.3,cat:"蔬菜",tags:"紫菜 海苔"},
+  "苦瓜":            {c:4.0, p:1.0,f:0.2,cat:"蔬菜",tags:"苦瓜"},
+  "莲藕":            {c:11.0,p:1.9,f:0.2,cat:"蔬菜",tags:"莲藕 藕"},
+  // ─── 水果 ─────────────────────────────────
+  "苹果":            {c:13.8,p:0.3,f:0.2,cat:"水果",tags:"苹果"},
+  "香蕉":            {c:22.8,p:1.1,f:0.2,cat:"水果",tags:"香蕉"},
+  "橙子":            {c:11.8,p:0.9,f:0.1,cat:"水果",tags:"橙子 橙"},
+  "蓝莓":            {c:14.5,p:0.7,f:0.3,cat:"水果",tags:"蓝莓"},
+  "猕猴桃":          {c:14.5,p:0.8,f:0.4,cat:"水果",tags:"猕猴桃 奇异果"},
+  "葡萄":            {c:17.3,p:0.5,f:0.2,cat:"水果",tags:"葡萄"},
+  "西瓜":            {c:6.0, p:0.6,f:0.1,cat:"水果",tags:"西瓜"},
+  "火龙果":          {c:13.0,p:1.1,f:0.2,cat:"水果",tags:"火龙果"},
+  // ─── 奶类 ─────────────────────────────────
+  "牛奶（全脂）":     {c:4.8, p:3.2,f:3.3,cat:"奶类",tags:"牛奶 全脂 鲜奶"},
+  "牛奶（脱脂）":     {c:4.9, p:3.4,f:0.1,cat:"奶类",tags:"脱脂牛奶"},
+  "酸奶（全脂）":    {c:4.7, p:2.9,f:3.2,cat:"奶类",tags:"酸奶 全脂"},
+  "无糖酸奶":        {c:3.6, p:5.0,f:0.7,cat:"奶类",tags:"无糖酸奶 希腊酸奶"},
+  "奶酪":            {c:1.3, p:25.0,f:23.0,cat:"奶类",tags:"奶酪 芝士 cheese"},
+  // ─── 坚果 ─────────────────────────────────
+  "杏仁":            {c:19.0,p:21.0,f:49.0,cat:"坚果",tags:"杏仁 巴旦木"},
+  "花生":            {c:15.0,p:26.0,f:45.0,cat:"坚果",tags:"花生"},
+  "腰果":            {c:26.0,p:18.0,f:44.0,cat:"坚果",tags:"腰果"},
+  "奇亚籽":          {c:42.0,p:17.0,f:31.0,cat:"坚果",tags:"奇亚籽 chia"},
+  // ─── 中式炒菜 ──────────────────────────────
+  "宫保鸡丁":        {c:10.0,p:18.0,f:16.0,cat:"炒菜",tags:"宫保鸡丁 川菜 炒鸡丁 花生"},
+  "鱼香肉丝":        {c:12.0,p:14.0,f:14.0,cat:"炒菜",tags:"鱼香肉丝 川菜 木耳"},
+  "回锅肉":          {c:6.0, p:13.0,f:28.0,cat:"炒菜",tags:"回锅肉 川菜 五花肉"},
+  "麻婆豆腐":        {c:6.0, p:14.0,f:14.0,cat:"炒菜",tags:"麻婆豆腐 川菜 豆腐"},
+  "红烧肉":          {c:8.0, p:12.0,f:32.0,cat:"炒菜",tags:"红烧肉 鲁菜 五花肉"},
+  "糖醋里脊":        {c:18.0,p:16.0,f:12.0,cat:"炒菜",tags:"糖醋里脊 糖醋 鲁菜"},
+  "京酱肉丝":        {c:10.0,p:16.0,f:15.0,cat:"炒菜",tags:"京酱肉丝 京菜 豆皮"},
+  "木须肉":          {c:7.0, p:14.0,f:10.0,cat:"炒菜",tags:"木须肉 木耳 鸡蛋"},
+  "青椒肉丝":        {c:6.0, p:15.0,f:11.0,cat:"炒菜",tags:"青椒肉丝 彩椒 炒肉"},
+  "蒜苗肉丝":        {c:5.0, p:15.0,f:10.0,cat:"炒菜",tags:"蒜苗肉丝 炒肉"},
+  "苦瓜炒蛋":        {c:4.0, p:12.0,f:11.0,cat:"炒菜",tags:"苦瓜炒蛋 苦瓜 鸡蛋"},
+  "西红柿炒鸡蛋":     {c:5.0, p:10.0,f:10.0,cat:"炒菜",tags:"西红柿炒蛋 番茄炒蛋"},
+  "黄瓜炒鸡蛋":      {c:3.0, p:10.0,f:9.0,cat:"炒菜",tags:"黄瓜炒蛋"},
+  "蒜蓉西兰花":      {c:5.0, p:3.0, f:4.0,cat:"炒菜",tags:"蒜蓉西兰花 清炒"},
+  "干煸四季豆":      {c:6.0, p:4.0, f:5.0,cat:"炒菜",tags:"干煸四季豆 四季豆 豆角"},
+  "手撕包菜":        {c:4.0, p:2.0, f:5.0,cat:"炒菜",tags:"手撕包菜 圆白菜 炒菜"},
+  "酸辣土豆丝":      {c:14.0,p:2.5, f:4.0,cat:"炒菜",tags:"酸辣土豆丝 土豆丝 酸辣"},
+  "清炒时蔬":        {c:4.0, p:2.0, f:4.0,cat:"炒菜",tags:"清炒时蔬 炒青菜"},
+  "蒜蓉菠菜":        {c:4.0, p:3.0, f:4.0,cat:"炒菜",tags:"蒜蓉菠菜 菠菜"},
+  "炒青菜":          {c:3.0, p:2.0, f:4.0,cat:"炒菜",tags:"炒青菜 小青菜"},
+  "炒红薯叶":        {c:3.0, p:2.0, f:3.0,cat:"炒菜",tags:"炒红薯叶 红薯叶"},
+  // ─── 外卖 / 快餐 ──────────────────────────
+  "麦当劳巨无霸":     {c:33.0,p:13.0,f:14.0,cat:"快餐",tags:"麦当劳 巨无霸 汉堡"},
+  "麦当劳麦辣鸡翅":   {c:11.0,p:15.0,f:12.0,cat:"快餐",tags:"麦当劳 麦辣 鸡翅"},
+  "薯条（中）":      {c:36.0,p:3.0, f:16.0,cat:"快餐",tags:"薯条 炸薯条"},
+  "煎饼果子":        {c:40.0,p:8.0, f:10.0,cat:"快餐",tags:"煎饼果子 煎饼 早餐"},
+  "炒饭":            {c:45.0,p:8.0, f:10.0,cat:"快餐",tags:"炒饭 蛋炒饭"},
+  "炒面":            {c:42.0,p:9.0, f:12.0,cat:"快餐",tags:"炒面"},
+  "麻辣烫":          {c:15.0,p:10.0,f:12.0,cat:"快餐",tags:"麻辣烫 冒菜"},
+  "黄焖鸡米饭":      {c:28.0,p:18.0,f:10.0,cat:"快餐",tags:"黄焖鸡 黄焖鸡米饭"},
+  "沙县小吃拌面":    {c:38.0,p:8.0, f:10.0,cat:"快餐",tags:"沙县 拌面 面"},
+  "沙县蒸饺":        {c:25.0,p:9.0, f:8.0,cat:"快餐",tags:"沙县 蒸饺"},
+  "兰州拉面":        {c:45.0,p:10.0,f:8.0,cat:"快餐",tags:"兰州拉面 牛肉面 面条"},
+  "过桥米线":        {c:35.0,p:8.0, f:6.0,cat:"快餐",tags:"米线 过桥米线 云南"},
+  "炸鸡":            {c:8.0, p:18.0,f:18.0,cat:"快餐",tags:"炸鸡 汉堡"},
+  "披萨（意式）":    {c:30.0,p:12.0,f:12.0,cat:"快餐",tags:"披萨 pizza"},
+  "沙拉（无酱）":    {c:5.0, p:2.0, f:0.5,cat:"快餐",tags:"沙拉 蔬菜沙拉"},
+  "沙拉（凯撒酱）":  {c:8.0, p:3.0, f:10.0,cat:"快餐",tags:"沙拉 凯撒酱"},
+  // ─── 其他 ────────────────────────────────
+  "黑巧克力（70%）":  {c:46.0,p:8.0, f:43.0,cat:"其他",tags:"黑巧克力 巧克力"},
+  "冰淇淋":          {c:24.0,p:3.5, f:7.0,cat:"其他",tags:"冰淇淋 冰激凌"},
+  "薯片":            {c:53.0,p:5.0, f:35.0,cat:"其他",tags:"薯片 零食"},
+  "豆腐（南）":      {c:1.8, p:8.0, f:3.5,cat:"其他",tags:"豆腐 南豆腐 嫩豆腐"},
+  "豆腐（北）":      {c:1.2, p:12.0,f:4.8,cat:"其他",tags:"豆腐 北豆腐 老豆腐"},
+  "豆浆":            {c:1.5, p:2.5, f:1.0,cat:"其他",tags:"豆浆"},
+  "咖啡（美式）":    {c:0.5, p:0.3, f:0.0,cat:"其他",tags:"咖啡 美式"},
+  "咖啡（拿铁）":    {c:5.0, p:3.5, f:2.5,cat:"其他",tags:"咖啡 拿铁 拿铁咖啡"},
+  "啤酒（330ml）":   {c:10.0,p:1.0, f:0.0,cat:"其他",tags:"啤酒 酒"}
+};
+
+// ── 全局状态 ──────────────────────────────────
+var P={gender:"male",activity:1.55,weight:70,height:170,age:25,deficit:500},
+    currentDate=todayStr(),allData={},activeFilter="全部",chartType="weight";
+
+// ── 工具函数 ──────────────────────────────────
+function todayStr(){var d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function pad(n){return n<10?"0"+n:n;}
+function kcal(c,p,f){return Math.round(c*4+p*4+f*9);}
+function wkday(ds){return["周日","周一","周二","周三","周四","周五","周六"][new Date(ds+"T00:00:00").getDay()];}
+function fmtDate(ds){var d=new Date(ds+"T00:00:00");return(d.getMonth()+1)+"月"+d.getDate()+"日";}
+function toast(msg){var t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(function(){t.classList.remove("show");},1800);}
+
+// ── 计算 ─────────────────────────────────────
+function BMR(){return P.gender==="male"?10*P.weight+6.25*P.height-5*P.age+5:10*P.weight+6.25*P.height-5*P.age-161;}
+function TDEE(b){return Math.round(b*P.activity);}
+function TARGET(t){return t-P.deficit;}
+function REC(){var w=P.weight;return{c:Math.round(w*2),p:Math.round(w*2),f:Math.round(w*0.8)};} // 修正：蛋白2g碳水2g脂肪0.8g
+
+function recalc(){
+  var B=BMR(),T=TDEE(B),G=TARGET(T),R=REC();
+  var d=getData();
+  var ec=0,ep=0,ef=0;
+  for(var i=0;i<d.foods.length;i++){ec+=d.foods[i].c;ep+=d.foods[i].p;ef+=d.foods[i].f;}
+  var cal=kcal(ec,ep,ef),calRem=G-cal;
+  document.getElementById("bmrVal").textContent=Math.round(B);
+  document.getElementById("targetVal").textContent=G;
+  document.getElementById("calRem").textContent=calRem+(calRem>=0?"":"");
+  document.getElementById("calRem").style.color=calRem>=0?"#3dd68c":"#ff6b6b";
+  setM("c",ec,R.c);setM("p",ep,R.p);setM("f",ef,R.f);
+  document.getElementById("foodCount").textContent=d.foods.length;
+  document.getElementById("foodCal").textContent=cal;
+  renderFoods();renderDaySummary(cal,G,ec,ep,ef,R);
+}
+
+function setM(type,eaten,total){
+  var pct=total>0?Math.min(eaten/total*100,100):0;
+  var rem=total-eaten;
+  document.getElementById(type+"Eat").textContent=eaten.toFixed(0);
+  document.getElementById(type+"Tot").textContent=total;
+  document.getElementById(type+"Bar").style.width=pct+"%";
+}
+
+// ── 数据存取 ─────────────────────────────────
+function getData(){if(!allData[currentDate])allData[currentDate]={foods:[],weight:null};return allData[currentDate];}
+function saveAllData(){localStorage.setItem("lipidAllData2",JSON.stringify(allData));}
+function loadAllData(){var s=localStorage.getItem("lipidAllData2");if(s){try{allData=JSON.parse(s);}catch(e){}}}
+function saveProfile(){
+  P.gender=document.getElementById("gender").value;
+  P.activity=parseFloat(document.getElementById("activity").value);
+  P.weight=parseFloat(document.getElementById("weight").value)||70;
+  P.height=parseFloat(document.getElementById("height").value)||170;
+  P.age=parseFloat(document.getElementById("age").value)||25;
+  P.deficit=parseFloat(document.getElementById("deficit").value)||500;
+  localStorage.setItem("lipidProfile2",JSON.stringify(P));recalc();toast("设置已保存");
+}
+function loadProfile(){
+  var s=localStorage.getItem("lipidProfile2");
+  if(s){try{Object.assign(P,JSON.parse(s));}catch(e){}}
+  document.getElementById("gender").value=P.gender;
+  document.getElementById("activity").value=P.activity;
+  document.getElementById("weight").value=P.weight||"";
+  document.getElementById("height").value=P.height||"";
+  document.getElementById("age").value=P.age||"";
+  document.getElementById("deficit").value=P.deficit||"";
+}
+
+// ── 体重 ─────────────────────────────────────
+function saveWeight(){
+  var v=parseFloat(document.getElementById("fastedWeight").value);
+  if(!v||v<=0){toast("请输入有效体重");return;}
+  getData().weight=v;saveAllData();recalc();
+  toast("体重已记录: "+v+"kg");
+}
+function getWtDelta(){
+  var d=getData();
+  if(!d.weight)return"";
+  var dates=Object.keys(allData).sort().reverse();
+  for(var i=0;i<dates.length;i++){
+    if(dates[i]<currentDate&&allData[dates[i]].weight){
+      var diff=(d.weight-allData[dates[i]].weight).toFixed(1);
+      var sign=diff<0?"↓":diff>0?"↑":"→";
+      var color=diff<0?"#3dd68c":diff>0?"#ff6b6b":"#888";
+      return'<span style="color:'+color+'">'+sign+Math.abs(diff)+'kg</span>';
+    }
+  }
+  return'<span style="color:#888">首日记</span>';
+}
+
+// ── 食物操作 ─────────────────────────────────
+function addFood(name,weight){
+  if(!name||!weight||weight<=0)return;
+  var src=DB[name];if(!src)return;
+  var factor=weight/100;
+  getData().foods.push({name:name,weight:weight,c:src.c*factor,p:src.p*factor,f:src.f*factor});
+  saveAllData();recalc();
+}
+function removeFood(idx){getData().foods.splice(idx,1);saveAllData();recalc();}
+function clearAll(){if(!confirm("清空今日所有记录？"))return;getData().foods=[];getData().weight=null;saveAllData();recalc();toast("已清空");}
+
+// ── 渲染食物列表 ─────────────────────────────
+function renderFoods(){
+  var list=document.getElementById("foodList"),foods=getData().foods;
+  if(foods.length===0){list.innerHTML='<div class="empty">还没有记录，上方搜索添加</div>';return;}
+  var html="";
+  for(var i=0;i<foods.length;i++){
+    var f=foods[i];
+    html+='<div class="food-item">'+
+      '<div class="food-left">'+
+        '<div class="food-name">'+f.name+'</div>'+
+        '<div class="food-meta"><span class="c">碳'+f.c.toFixed(1)}g</span> <span class="p">蛋白'+f.p.toFixed(1)}g</span> <span class="f">脂'+f.f.toFixed(1)}g</span> '+kcal(f.c,f.p,f.f)+'kcal</div>'+
+      '</div>'+
+      '<div class="food-right">'+
+        '<div class="wt-adjust"><button class="adj-btn" onclick="adjWt('+i+',-10)">-</button>'+
+        '<input type="number" value="'+f.weight+'" min="1" onchange="adjWtDirect('+i+',this.value)">'+
+        '<button class="adj-btn" onclick="adjWt('+i+',10)">+</button></div>'+
+        '<div class="food-kcal">'+kcal(f.c,f.p,f.f)+'</div>'+
+        '<button class="del-btn" onclick="removeFood('+i+')">✕</button>'+
+      '</div>'+
+    '</div>';
+  }
+  list.innerHTML=html;
+}
+function adjWt(i,delta){
+  var f=getData().foods[i];
+  var newWt=Math.max(1,f.weight+delta);
+  var factor=newWt/f.weight;
+  f.c*=factor;f.p*=factor;f.f*=factor;f.weight=newWt;
+  saveAllData();recalc();
+}
+function adjWtDirect(i,val){
+  var newWt=Math.max(1,parseFloat(val)||1);
+  var f=getData().foods[i];
+  var factor=newWt/f.weight;
+  f.c*=factor;f.p*=factor;f.f*=factor;f.weight=newWt;
+  saveAllData();recalc();
+}
+
+// ── 每日总结 ─────────────────────────────────
+function renderDaySummary(cal,G,ec,ep,ef,R){
+  var el=document.getElementById("daySummary");
+  if(getData().foods.length===0){el.classList.add("hidden");return;}
+  el.classList.remove("hidden");
+  var calDiff=cal-G;
+  var calOk=calDiff<=0;
+  var cOk=ec<=R.c,pOk=ep<=R.p,fOk=ef<=R.f;
+  el.innerHTML='<div class="ds-title">📋 今日小结</div>'+
+    '<div class="ds-row"><span>热量</span><span class="v '+(calOk?'ok':'warn')+'">'+cal+' / '+G+'kcal ('+(calOk?'达标':'超标'+Math.abs(calDiff))+'</span></div>'+
+    '<div class="ds-row"><span>碳水</span><span class="v '+(cOk?'ok':'warn')+'">'+ec.toFixed(0)+' / '+R.c+'g ('+(ec-R.c>=0?'+':'')+(ec-R.c).toFixed(0)+'g)</span></div>'+
+    '<div class="ds-row"><span>蛋白</span><span class="v '+(pOk?'ok':'warn')+'">'+ep.toFixed(0)+' / '+R.p+'g ('+(ep-R.p>=0?'+':'')+(ep-R.p).toFixed(0)+'g)</span></div>'+
+    '<div class="ds-row"><span>脂肪</span><span class="v '+(fOk?'ok':'warn')+'">'+ef.toFixed(0)+' / '+R.f+'g ('+(ef-R.f>=0?'+':'')+(ef-R.f).toFixed(0)+'g)</span></div>';
+}
+
+// ── 搜索功能 ─────────────────────────────────
+function buildFilters(){
+  var cats=["全部","主食","肉类","蔬菜","水果","奶类","坚果","炒菜","快餐","其他"];
+  var wrap=document.getElementById("filterTags");
+  wrap.innerHTML="";
+  cats.forEach(function(cat){
+    var el=document.createElement("div");
+    el.className="filter-tag"+(cat==="全部"?" active":"");
+    el.textContent=cat;
+    el.onclick=function(){
+      document.querySelectorAll(".filter-tag").forEach(function(e){e.classList.remove("active");});
+      el.classList.add("active");activeFilter=cat;
+      var q=document.getElementById("foodSearch").value;
+      if(q)doSearch(q);else closeSearch();
+    };
+    wrap.appendChild(el);
+  });
+}
+
+function doSearch(q){
+  var results=document.getElementById("searchResults");
+  if(!q||q.length===0){closeSearch();return;}
+  document.getElementById("searchClear").classList.add("show");
+  var qLower=q.toLowerCase().trim();
+  var matches=[];
+  Object.keys(DB).forEach(function(name){
+    var item=DB[name];
+    if(activeFilter!=="全部"&&item.cat!==activeFilter)return;
+    var score=0;
+    if(name===qLower)score=100;
+    else if(name.indexOf(qLower)===0)score=80;
+    else if(name.indexOf(qLower)>0)score=50;
+    else if(item.tags&&item.tags.indexOf(qLower)>=0)score=40;
+    else {
+      // 拼音首字母匹配（简单）
+      var pinyinMap={"zh":"中","ch":"吃","r":"肉","j":"鸡","c":"菜","t":"碳","dan":"蛋","yu":"鱼","lu":"绿","hong":"红","bai":"白","hei":"黑","la":"辣","suan":"酸","ti":"体","jian":"减","fei":"肥","shou":"瘦","biao":"标","bia":"标"};
+      // 退而求其次：宽松包含匹配
+      var combined=(name+item.tags+qLower).toLowerCase();
+      if(combined.indexOf(qLower)>=0)score=20;
+    }
+    if(score>0)matches.push({name:name,item:item,score:score});
+  });
+  matches.sort(function(a,b){return b.score-a.score;});
+  matches=matches.slice(0,15);
+  if(matches.length===0){results.innerHTML='<div class="search-no">没有找到"'+q+'"<br><span style="font-size:11px;color:#444">试试其他关键词</span></div>';results.classList.add("open");return;}
+  var html="";
+  matches.forEach(function(m){
+    var item=m.item;
+    var cal=kcal(item.c,item.p,item.f);
+    var nameHtml='<span class="sr-name">'+highlight(m.name,q)+'</span>';
+    var tagsHtml='<div class="sr-meta"><span class="sr-tag">'+item.cat+'</span></div>';
+    html+='<div class="search-result-item" onclick="pickFood(\\''+m.name.replace(/'/g,"\\'")+'\\')">'+
+      '<div class="sr-left">'+nameHtml+tagsHtml+'</div>'+
+      '<div class="sr-right"><div class="sr-kcal">'+cal+'</div><div class="sr-unit">kcal/100g</div></div>'+
+    '</div>';
+  });
+  results.innerHTML=html;results.classList.add("open");
+}
+
+function highlight(text,q){
+  if(!q)return text;
+  var idx=text.toLowerCase().indexOf(q.toLowerCase());
+  if(idx<0)return text;
+  return text.slice(0,idx)+'<span class="hl">'+text.slice(idx,idx+q.length)+'</span>'+text.slice(idx+q.length);
+}
+
+function closeSearch(){
+  document.getElementById("searchResults").classList.remove("open");
+  document.getElementById("searchClear").classList.remove("show");
+}
+
+function clearSearch(){
+  document.getElementById("foodSearch").value="";
+  closeSearch();
+  document.getElementById("foodSearch").focus();
+}
+
+function pickFood(name){
+  addFood(name,100);
+  clearSearch();
+  toast("已添加: "+name);
+  closeSearch();
+}
+
+// ── 快速标签 ─────────────────────────────────
+function buildQuickTags(){
+  var quicks=["宫保鸡丁","鱼香肉丝","西红柿炒鸡蛋","鸡胸肉","牛肉（瘦）","三文鱼","西兰花","番茄","无糖酸奶","燕麦片","红薯","鸡蛋"];
+  var wrap=document.getElementById("quickTags");
+  wrap.innerHTML="";
+  quicks.forEach(function(name){
+    if(!DB[name])return;
+    var el=document.createElement("div");
+    el.className="quick-tag";
+    el.textContent=name;
+    el.onclick=function(){pickFood(name);};
+    wrap.appendChild(el);
+  });
+}
+
+// ── 列表选择器 ───────────────────────────────
+function buildSelect(){
+  var sel=document.getElementById("foodSel");
+  sel.innerHTML="";
+  var cats={};
+  Object.keys(DB).forEach(function(name){
+    var cat=DB[name].cat||"其他";
+    if(!cats[cat])cats[cat]=[];
+    cats[cat].push(name);
+  });
+  Object.keys(cats).sort().forEach(function(cat){
+    var og=document.createElement("optgroup");
+    og.label=cat;
+    cats[cat].forEach(function(name){
+      var o=document.createElement("option");
+      o.value=name;o.textContent=name;og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+}
+function addFromSelect(){
+  var name=document.getElementById("foodSel").value;
+  var wt=parseFloat(document.getElementById("foodWt").value)||100;
+  if(!name){toast("请选择食物");return;}
+  addFood(name,wt);toast("已添加: "+name);
+}
+
+// ── 历史 ─────────────────────────────────────
+function switchTab(tab){
+  document.getElementById("tabCalc").classList.toggle("active",tab==="calc");
+  document.getElementById("tabHist").classList.toggle("active",tab==="hist");
+  document.getElementById("tabStats").classList.toggle("active",tab==="stats");
+  document.getElementById("tabData").classList.toggle("active",tab==="data");
+  document.getElementById("calcTab").classList.toggle("hidden",tab!=="calc");
+  document.getElementById("histTab").classList.toggle("hidden",tab!=="hist");
+  document.getElementById("statsTab").classList.toggle("hidden",tab!=="stats");
+  document.getElementById("dataTab").classList.toggle("hidden",tab!=="data");
+  if(tab==="hist")renderHistory();
+  if(tab==="stats"){showChart(chartType);renderWeekReport();}
+}
+function changeDate(delta){
+  var d=new Date(currentDate+"T00:00:00");d.setDate(d.getDate()+delta);
+  currentDate=d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  document.getElementById("datePick")&&(document.getElementById("datePick").value=currentDate);
+  loadDate();recalc();updateHistDayInfo();
+}
+function onDateChange(){currentDate=document.getElementById("datePick").value;loadDate();recalc();updateHistDayInfo();}
+function goToday(){currentDate=todayStr();document.getElementById("datePick")&&(document.getElementById("datePick").value=currentDate);loadDate();recalc();updateHistDayInfo();}
+function loadDate(){if(!allData[currentDate])allData[currentDate]={foods:[],weight:null};}
+function updateHistDayInfo(){
+  var R=REC(),B=BMR(),T=TDEE(B),G=TARGET(T),d=getData();
+  var ec=0,ep=0,ef=0;
+  for(var i=0;i<d.foods.length;i++){ec+=d.foods[i].c;ep+=d.foods[i].p;ef+=d.foods[i].f;}
+  var cal=kcal(ec,ep,ef);
+  var el=document.getElementById("histDayInfo");
+  if(d.foods.length===0&&!d.weight){el.innerHTML='<div class="empty">该日无记录</div>';return;}
+  var html='<div class="history-card" style="cursor:default">';
+  if(d.weight)html+='<div class="history-top"><span class="history-date">体重</span><span class="history-wt">'+d.weight+'kg</span></div>';
+  if(d.foods.length>0){
+    var calDiff=cal-G;
+    html+='<div class="history-cal '+(calDiff<=0?'ok':'over')+'">'+cal+'kcal '+(calDiff<=0?'达标':'超标'+Math.abs(calDiff))+'</div>';
+    html+='<div class="chips"><span class="chip '+(ec<=R.c?'ok':'over')+'">碳'+(ec-R.c>=0?'+':'')+(ec-R.c).toFixed(0)+'g</span><span class="chip '+(ep<=R.p?'ok':'over')+'">蛋白'+(ep-R.p>=0?'+':'')+(ep-R.p).toFixed(0)+'g</span></div>';
+  }
+  html+='</div>';
+  el.innerHTML=html;
+  document.getElementById("dateTitle").textContent=fmtDate(currentDate)+" "+wkday(currentDate);
+}
+function jumpToDate(ds){currentDate=ds;document.getElementById("datePick")&&(document.getElementById("datePick").value=currentDate);loadDate();recalc();updateHistDayInfo();switchTab("calc");}
+function renderHistory(){
+  var list=document.getElementById("historyList");
+  var dates=Object.keys(allData).filter(function(d){return d<=todayStr();}).sort().reverse();
+  if(dates.length===0){list.innerHTML='<div class="empty">暂无历史记录</div>';return;}
+  var R=REC(),B=BMR(),T=TDEE(B),G=TARGET(T);
+  var html="";
+  for(var j=0;j<Math.min(dates.length,60);j++){
+    var ds=dates[j];var d=allData[ds];
+    var ec=0,ep=0,ef=0;
+    for(var i=0;i<d.foods.length;i++){ec+=d.foods[i].c;ep+=d.foods[i].p;ef+=d.foods[i].f;}
+    var cal=kcal(ec,ep,ef),calDiff=cal-G;
+    var foodNames=d.foods.length>0?d.foods.map(function(f){return f.name+"×"+f.weight+"g";}).join("、"):"无记录";
+    html+='<div class="history-card" onclick="jumpToDate(\\''+ds+'\\')">'+
+      '<div class="history-top"><span class="history-date">'+fmtDate(ds)+' '+wkday(ds)+'</span>'+(d.weight?'<span class="history-wt">'+d.weight+'kg</span>':'')+'</div>'+
+      '<div class="history-cal '+(calDiff<=0?'ok':'over')+'">'+cal+'kcal '+(calDiff<=0?'达标':'超标'+Math.abs(calDiff))+'</div>'+
+      '<div class="chips"><span class="chip '+(ec<=R.c?'ok':'over')+'">碳'+(ec-R.c>=0?'+':'')+c2(ec-R.c)+'g</span><span class="chip '+(ep<=R.p?'ok':'over')+'">蛋白'+(ep-R.p>=0?'+':'')+c2(ep-R.p)+'g</span></div>'+
+      '<div class="history-foods">'+foodNames+'</div>'+
+    '</div>';
+  }
+  list.innerHTML=html;
+}
+function c2(n){return(n>=0?"+":"")+n.toFixed(0);}
+
+// ── 趋势图表 ─────────────────────────────────
+function showChart(type){
+  chartType=type;
+  document.getElementById("chartBtnWt").classList.toggle("active",type==="weight");
+  document.getElementById("chartBtnCal").classList.toggle("active",type==="cal");
+  document.getElementById("chartBtnMacro").classList.toggle("active",type==="macro");
+  var dates=Object.keys(allData).filter(function(d){return d<=todayStr();}).sort();
+  var R=REC(),B=BMR(),T=TDEE(B),G=TARGET(T);
+  var canvas=document.getElementById("trendCanvas");
+  var ctx=canvas.getContext("2d");
+  var W=canvas.width,H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  if(dates.length<2){ctx.fillStyle="#444";ctx.font="13px sans-serif";ctx.textAlign="center";ctx.fillText("记录至少2天数据后显示趋势",W/2,H/2+5);document.getElementById("chartSummary").textContent="";return;}
+  var pts=[];
+  if(type==="weight"){
+    dates.forEach(function(d){if(allData[d].weight)pts.push({x:d,y:allData[d].weight});});
+  } else if(type==="cal"){
+    dates.forEach(function(d){
+      var ec=0,ep=0,ef=0;
+      for(var i=0;i<allData[d].foods.length;i++){ec+=allData[d].foods[i].c;ep+=allData[d].foods[i].p;ef+=allData[d].foods[i].f;}
+      pts.push({x:d,y:kcal(ec,ep,ef)});
+    });
+  } else {
+    dates.forEach(function(d){
+      var ep=0;
+      for(var i=0;i<allData[d].foods.length;i++)ep+=allData[d].foods[i].p;
+      pts.push({x:d,y:ep});
+    });
+  }
+  if(pts.length<2){ctx.fillStyle="#444";ctx.font="13px sans-serif";ctx.textAlign="center";ctx.fillText("数据不足",W/2,H/2+5);document.getElementById("chartSummary").textContent="";return;}
+  var vals=pts.map(function(p){return p.y;});
+  var minV=Math.min.apply(null,vals);
+  var maxV=Math.max.apply(null,vals);
+  var padV=(maxV-minV)*0.15||10;
+  var chartMin=type==="weight"?minV-padV:0;
+  var chartMax=maxV+padV;
+  var drawH=H-30,drawW=W-20;
+  // 目标线（热量）
+  if(type==="cal"){
+    ctx.strokeStyle="#ffd93d";ctx.setLineDash=[4,4];ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(10,mapY(G,chartMin,chartMax,drawH));ctx.lineTo(W-10,mapY(G,chartMin,chartMax,drawH));ctx.stroke();
+    ctx.setLineDash=[];
+  }
+  // 折线
+  ctx.strokeStyle="#3dd68c";ctx.lineWidth=2;ctx.beginPath();
+  pts.forEach(function(p,i){
+    var x=10+i*(drawW/(pts.length-1));
+    var y=mapY(p.y,chartMin,chartMax,drawH);
+    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  // 点
+  ctx.fillStyle="#3dd68c";
+  pts.forEach(function(p,i){
+    var x=10+i*(drawW/(pts.length-1));
+    var y=mapY(p.y,chartMin,chartMax,drawH);
+    ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();
+  });
+  // 底部标签
+  ctx.fillStyle="#555";ctx.font="9px sans-serif";ctx.textAlign="center";
+  var step=Math.max(1,Math.floor(pts.length/5));
+  pts.forEach(function(p,i){
+    if(i%step===0||i===pts.length-1){
+      var x=10+i*(drawW/(pts.length-1));
+      var ds=p.x.split("-");ctx.fillText(parseInt(ds[1])+"/"+parseInt(ds[2]),x,H-8);
+    }
+  });
+  // 汇总
+  var avg=vals.reduce(function(a,b){return a+b;},0)/vals.length;
+  var unit=type==="weight"?"kg":type==="cal"?"kcal":"g";
+  document.getElementById("chartSummary").innerHTML=
+    "共 "+pts.length+" 天 | 均值 <b style='color:#e8e8f0'>"+avg.toFixed(1)+unit+"</b> | 最高 <b style='color:#ff6b6b'>"+maxV.toFixed(1)+unit+"</b> | 最低 <b style='color:#6bcfff'>"+minV.toFixed(1)+unit+"</b>";
+}
+function mapY(v,min,max,h){return h-(v-min)/(max-min)*h;}
+
+// ── 周报 ─────────────────────────────────────
+function renderWeekReport(){
+  var dates=Object.keys(allData).filter(function(d){return d<=todayStr();}).sort().reverse().slice(0,7).reverse();
+  var R=REC(),B=BMR(),T=TDEE(B),G=TARGET(T);
+  var el=document.getElementById("weekReport");
+  if(dates.length===0){el.innerHTML='<div class="empty">本周暂无数据</div>';return;}
+  var days=[],totalCal=0,totalDays=0,avgProtein=0,weightStart=null,weightEnd=null;
+  dates.forEach(function(ds){
+    var d=allData[ds];
+    if(!d.weight&&d.foods.length===0)return;
+    var ec=0,ep=0,ef=0;
+    for(var i=0;i<d.foods.length;i++){ec+=d.foods[i].c;ep+=d.foods[i].p;ef+=d.foods[i].f;}
+    var cal=kcal(ec,ep,ef);
+    days.push({date:ds,cal:cal,protein:ep,weight:d.weight,over:cal>G});
+    totalCal+=cal;totalDays++;avgProtein+=ep;
+    if(d.weight){weightEnd=d.weight;if(!weightStart)weightStart=d.weight;}
+  });
+  if(days.length===0){el.innerHTML='<div class="empty">本周暂无数据</div>';return;}
+  var avgCal=totalCal/totalDays;
+  avgProtein=avgProtein/totalDays;
+  var overDays=days.filter(function(d){return d.over;}).length;
+  var html="";
+  days.forEach(function(d){
+    var calDiff=d.cal-G;
+    html+='<div class="wreport-item">'+
+      '<span class="wr-key">'+fmtDate(d.date)+' '+wkday(d.date)+'</span>'+
+      '<span class="wr-val" style="color:'+(d.cal<=G?'#3dd68c':'#ff6b6b')+'">'+d.cal+'kcal</span>'+
+    '</div>';
+  });
+  html+='<div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">'+
+    '<div class="wstat"><div class="ws-label">日均热量</div><div class="ws-val '+(avgCal<=G?'green':'red')+'">'+Math.round(avgCal)+'</div></div>'+
+    '<div class="wstat"><div class="ws-label">日均蛋白</div><div class="ws-val green">'+avgProtein.toFixed(0)+'g</div></div>'+
+    '<div class="wstat"><div class="ws-label">超标天数</div><div class="ws-val '+(overDays===0?'green':'red')+'">'+overDays+'/'+days.length+'</div></div>'+
+  '</div>';
+  el.innerHTML=html;
+}
+
+// ── 数据导入导出 ──────────────────────────────
+function exportData(){
+  var blob=new Blob([JSON.stringify({profile:P,data:allData},null,2)],{type:"application/json"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download="fatloss-backup-"+todayStr()+".json";a.click();
+  toast("已导出JSON备份");
+}
+function exportCSV(){
+  var R=REC(),B=BMR(),T=TDEE(B),G=TARGET(T);
+  var rows=[["日期","体重","热量","碳水","蛋白","脂肪","超标?"]];
+  Object.keys(allData).sort().forEach(function(ds){
+    var d=allData[ds];
+    var ec=0,ep=0,ef=0;
+    for(var i=0;i<d.foods.length;i++){ec+=d.foods[i].c;ep+=d.foods[i].p;ef+=d.foods[i].f;}
+    rows.push([ds,d.weight||"",kcal(ec,ep,ef),ec.toFixed(1),ep.toFixed(1),ef.toFixed(1),kcal(ec,ep,ef)>G?"是":"否"]);
+  });
+  var csv=rows.map(function(r){return r.join(",");}).join("\n");
+  var blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download="fatloss-history-"+todayStr()+".csv";a.click();
+  toast("已导出CSV");
+}
+function importData(e){
+  var file=e.target.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      var obj=JSON.parse(ev.target.result);
+      if(obj.profile)Object.assign(P,obj.profile);
+      if(obj.data)allData=obj.data;
+      localStorage.setItem("lipidProfile2",JSON.stringify(P));
+      localStorage.setItem("lipidAllData2",JSON.stringify(allData));
+      loadProfile();recalc();
+      toast("导入成功！");
+    }catch(e){toast("导入失败，文件格式错误");}
+  };
+  reader.readAsText(file);
+}
+function resetAll(){
+  if(!confirm("确定删除所有数据？此操作不可恢复！"))return;
+  localStorage.removeItem("lipidProfile2");
+  localStorage.removeItem("lipidAllData2");
+  allData={};P={gender:"male",activity:1.55,weight:70,height:170,age:25,deficit:500};
+  loadProfile();recalc();
+  toast("所有数据已删除");
+}
+
+// ── 初始化 ───────────────────────────────────
+function init(){
+  loadProfile();loadAllData();loadDate();
+  buildFilters();buildQuickTags();buildSelect();
+  document.getElementById("datePick")&&(document.getElementById("datePick").value=currentDate,document.getElementById("datePick").max=todayStr());
+  updateHistDayInfo();recalc();
+  // 搜索事件
+  var searchInput=document.getElementById("foodSearch");
+  searchInput.addEventListener("input",function(){doSearch(this.value);});
+  searchInput.addEventListener("focus",function(){if(this.value)doSearch(this.value);});
+  document.addEventListener("click",function(e){
+    if(!e.target.closest(".search-wrap")&&!e.target.closest(".search-results"))closeSearch();
+  });
+}
+init();
+</script>
+</body>
+</html>
